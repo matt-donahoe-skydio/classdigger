@@ -10,3 +10,5 @@ class C(A, B):
 
     def overridden(self):
         print('This is C')
+        print('Calling super of C:')
+        super().overridden()
