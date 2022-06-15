@@ -49,7 +49,9 @@ class DFlat(Base2, Mixin):
         return "C override"
 
     def __D__overridden(self):
+        # Super call
         val = self.__C__overridden()
+
         return "D override" + " " + val
 
     def overridden(self):

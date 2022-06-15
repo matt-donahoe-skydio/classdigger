@@ -83,7 +83,7 @@ class TestMe(unittest.TestCase):
             if callable(v):
                 out = v()
                 outf = vf()
-                self.assertEqual(out, outf, attr)
+                self.assertEqual(repr(out), repr(outf), attr)
             else:
                 self.assertEqual(v, vf, attr)
             num += 1

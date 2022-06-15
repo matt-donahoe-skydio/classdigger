@@ -1,9 +1,11 @@
 x. Write member history to file
 x. Test on PROTO1
 x. Exec the generated class
-> 4. Write a comparison between real and flat, testing all attrs and methods
-    create a flat_d example file, instead of relying on exec
-5. Get arg parsing to work so Vehicle methods use their args
-6. pass optional base class, defaults to object
-7. read inheritance flattener and try to get comments to work for attributes
+x 4. Write a comparison between real and flat, testing all attrs and methods
+    x create a flat_d example file, instead of relying on exec
+x. Get arg parsing to work so Vehicle methods use their args
+x. pass optional base class, defaults to object
 8. move the new flat PROTO1 Vehicle class to it's own file
+Create a test for real params
+6. support @property
+7. read inheritance flattener and try to get comments to work for attributes

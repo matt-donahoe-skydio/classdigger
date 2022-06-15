@@ -88,6 +88,9 @@ def member_history(cls, output_parent_classes=tuple()):
             except:
                 if member_type == 'method':
                     continue
+                # we are either attr or property
+                if isinstance(member, property):
+                    continue
             latest = None
             previous = None
             set_any = False
@@ -98,8 +101,8 @@ def member_history(cls, output_parent_classes=tuple()):
                     anc_value = getattr(ancestor, name)
                 except AttributeError:
                     continue
-                if anc_value != latest:
-                    if set_any:
+                if latest is None or anc_value != latest:
+                    if latest is not None and set_any:
                         print(f"{name} changed from {latest} to {anc_value} in {ancestor.__name__}")
                     set_any = False
                     latest = anc_value
@@ -116,15 +119,26 @@ def member_history(cls, output_parent_classes=tuple()):
                             line = line.rstrip()
                             m = PY2_SUPER_PATTERN.search(line)
                             if m:
-                                super_cls_arg = m.group(2)  # Do we need this?
+                                super_cls_arg = m.group(2)
                                 assert super_cls_arg == ancestor.__name__
+
+                                # TOOD(matt): don't assume indention
+                                lines.append("        # Super call")
+
+                                # remove the super() function and determine the correct member manually.
                                 line = m.group(1) + f"self.__{previous.__name__}__" + m.group(3)
+                                lines.append(line)
+
+                                # Add a blank line
+                                lines.append("")
                             else:
-                                pass
-                            lines.append(line)
+                                lines.append(line)
                         # TODO(matt): get the args
                     elif member_type == 'attr':
                         lines.append(f"    {unique_name} = {repr(anc_value)}")
+                    elif member_type == 'property':
+                        # TODO(matt): implmenet
+                        continue
                     else:
                         raise TypeError(member_type)
 

@@ -7,6 +7,10 @@ class D(C):
             return self.a
         return "D"
 
+    @property
+    def cool(self):
+        return True
+
     def overridden(self):
         val = super(D, self).overridden()
         return "D override" + " " + val
