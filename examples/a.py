@@ -17,5 +17,5 @@ class A(Base2):
         self.a = "B"
         return self.a
 
-    def overridden(self):
-        return "A override"
+    def overridden(self, s):
+        return "A override" + s

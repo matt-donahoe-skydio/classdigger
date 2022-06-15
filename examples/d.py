@@ -11,6 +11,6 @@ class D(C):
     def cool(self):
         return True
 
-    def overridden(self):
-        val = super(D, self).overridden()
+    def overridden(self, s):
+        val = super(D, self).overridden(s)
         return "D override" + " " + val

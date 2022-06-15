@@ -114,7 +114,7 @@ def member_history(cls, output_parent_classes=tuple()):
                     elif member_type == 'method':
                         codelines, num = inspect.getsourcelines(anc_value)
                         lines.append("")
-                        lines.append(f"    def {unique_name}(self):")
+                        lines.append(f"    def {unique_name}(self):")  # TODO(matt): support args
                         for line in codelines[1:]:
                             line = line.rstrip()
                             m = PY2_SUPER_PATTERN.search(line)

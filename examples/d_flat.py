@@ -42,17 +42,17 @@ class DFlat(Base2, Mixin):
     def d_method(self):
         return self.__D__d_method()
 
-    def __A__overridden(self):
-        return "A override"
+    def __A__overridden(self, s):
+        return "A override" + s
 
-    def __C__overridden(self):
-        return "C override"
+    def __C__overridden(self, s):
+        return "C override" + s
 
-    def __D__overridden(self):
+    def __D__overridden(self, s):
         # Super call
-        val = self.__C__overridden()
+        val = self.__C__overridden(s)
 
         return "D override" + " " + val
 
-    def overridden(self):
-        return self.__D__overridden()
+    def overridden(self, s):
+        return self.__D__overridden(s)

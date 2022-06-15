@@ -13,5 +13,5 @@ class C(A, B, Mixin):
     def c_method(self):
         return "C"
 
-    def overridden(self):
-        return "C override"
+    def overridden(self, s):
+        return "C override" + s
