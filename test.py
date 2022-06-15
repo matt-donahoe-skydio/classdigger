@@ -1,5 +1,5 @@
 import unittest
-from classdigger import ClassDigger, member_history, PY2_SUPER_PATTERN
+from classdigger import ClassDigger, member_history, PY2_SUPER_PATTERN, arg_names
 import examples.a
 import examples.c
 import examples.d
@@ -81,8 +81,9 @@ class TestMe(unittest.TestCase):
             
             # Detect method or value.
             if callable(v):
-                out = v()
-                outf = vf()
+                args = arg_names(v)[1:]  # remove `self`
+                out = v(*args)
+                outf = vf(*args)
                 self.assertEqual(repr(out), repr(outf), attr)
             else:
                 self.assertEqual(v, vf, attr)
