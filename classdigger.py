@@ -2,6 +2,8 @@ from collections import defaultdict
 import inspect
 import os
 import re
+import sys
+import types
 
 """
 ancestors = cls.mro()[1:]
@@ -53,6 +55,13 @@ We can assert that the super matches a regex
 def create_unique_name(cls, name):
     return f"__{cls.__name__}__{name}"
 
+def arg_names(func):
+    """
+    Return the argument names used in the definition of the function.
+    """
+    names = list(inspect.getfullargspec(func).args)[:]  # pylint: disable=no-member
+    return names
+
 
 PY2_SUPER_PATTERN = re.compile("(.*)super\((.*), self\)\.(.*)")
 
@@ -75,7 +84,7 @@ def member_history(cls, output_parent_classes=tuple()):
             classes_to_ignore.add(ancestor)
 
 
-    lines.append(f"class {newname}({', '.join(p for p in parents)}):\n")
+    lines.append(f"class {newname}({', '.join(p for p in parents)}):")
     # Then iterate over members of just the top class
     for member_type in ('attr', 'property', 'method'):
         for name, member in inspect.getmembers(cls):
@@ -94,6 +103,11 @@ def member_history(cls, output_parent_classes=tuple()):
                         continue
                 elif member_type == 'property':
                     continue
+
+            # gross
+            if member_type == 'attr':
+                lines.append("")
+
             latest = None
             previous = None
             set_any = False
@@ -116,8 +130,9 @@ def member_history(cls, output_parent_classes=tuple()):
                         pass
                     elif member_type == 'method':
                         codelines, num = inspect.getsourcelines(anc_value)
+                        args = arg_names(anc_value)
                         lines.append("")
-                        lines.append(f"    def {unique_name}(self):")  # TODO(matt): support args
+                        lines.append(f"    def {unique_name}({', '.join(args)}):")
                         for line in codelines[1:]:
                             line = line.rstrip()
                             m = PY2_SUPER_PATTERN.search(line)
@@ -125,15 +140,13 @@ def member_history(cls, output_parent_classes=tuple()):
                                 super_cls_arg = m.group(2)
                                 assert super_cls_arg == ancestor.__name__
 
-                                # TOOD(matt): don't assume indention
-                                lines.append("        # Super call")
+                                lines.append("        # begin super() call")
 
                                 # remove the super() function and determine the correct member manually.
                                 line = m.group(1) + f"self.__{previous.__name__}__" + m.group(3)
                                 lines.append(line)
 
-                                # Add a blank line
-                                lines.append("")
+                                lines.append("        # end super() call")
                             else:
                                 lines.append(line)
                         # TODO(matt): get the args
@@ -173,16 +186,18 @@ def member_history(cls, output_parent_classes=tuple()):
                 if owner in classes_to_ignore:
                     continue
                 elif member_type == 'attr':
-                    lines.append(f"    {name} = __{owner.__name__}__{name}\n")
+                    lines.append(f"    {name} = __{owner.__name__}__{name}")
                 elif member_type == 'property':
                     lines.append("")
                     lines.append("    @property")
                     lines.append(f"    def {name}(self):")
                     lines.append(f"        return self.{create_unique_name(owner, name)}")
                 elif member_type == 'method':
+                    args = arg_names(latest)
+                    no_self_args = args[1:]
                     lines.append("")
-                    lines.append(f"    def {name}(self):")
-                    lines.append(f"        return self.{create_unique_name(owner, name)}()")  # TODO(matt): args
+                    lines.append(f"    def {name}({', '.join(args)}):")
+                    lines.append(f"        return self.{create_unique_name(owner, name)}({', '.join(no_self_args)})")
                 else:
                     raise TypeError(member_type)
     return '\n'.join(lines)
