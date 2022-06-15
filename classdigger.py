@@ -77,19 +77,22 @@ def member_history(cls, output_parent_classes=tuple()):
 
     lines.append(f"class {newname}({', '.join(p for p in parents)}):\n")
     # Then iterate over members of just the top class
-    for member_type in ('attr', 'method'):
+    for member_type in ('attr', 'property', 'method'):
         for name, member in inspect.getmembers(cls):
             if name.startswith('__'):
                 continue
             try:
                 inspect.getsourcelines(member)
-                if member_type == 'attr':
+                if member_type != 'method':
                     continue
             except:
                 if member_type == 'method':
                     continue
                 # we are either attr or property
                 if isinstance(member, property):
+                    if member_type != 'property':
+                        continue
+                elif member_type == 'property':
                     continue
             latest = None
             previous = None
@@ -137,7 +140,30 @@ def member_history(cls, output_parent_classes=tuple()):
                     elif member_type == 'attr':
                         lines.append(f"    {unique_name} = {repr(anc_value)}")
                     elif member_type == 'property':
-                        # TODO(matt): implmenet
+                        codelines, num = inspect.getsourcelines(anc_value.fget)
+                        lines.append("")
+                        lines.append("    @property")
+                        lines.append(f"    def {unique_name}(self):")  # TODO(matt): support args
+                        # drop the property line and the method siguration, since we already printed those.
+                        # TODO(matt); this is brittle. Stacked properties will probs break it.
+                        for line in codelines[2:]:
+                            line = line.rstrip()
+                            m = PY2_SUPER_PATTERN.search(line)
+                            if m:
+                                super_cls_arg = m.group(2)
+                                assert super_cls_arg == ancestor.__name__
+
+                                # TOOD(matt): don't assume indention
+                                lines.append("        # Super call")
+
+                                # remove the super() function and determine the correct member manually.
+                                line = m.group(1) + f"self.__{previous.__name__}__" + m.group(3)
+                                lines.append(line)
+
+                                # Add a blank line
+                                lines.append("")
+                            else:
+                                lines.append(line)
                         continue
                     else:
                         raise TypeError(member_type)
@@ -148,10 +174,17 @@ def member_history(cls, output_parent_classes=tuple()):
                     continue
                 elif member_type == 'attr':
                     lines.append(f"    {name} = __{owner.__name__}__{name}\n")
-                else:
+                elif member_type == 'property':
+                    lines.append("")
+                    lines.append("    @property")
+                    lines.append(f"    def {name}(self):")
+                    lines.append(f"        return self.{create_unique_name(owner, name)}")
+                elif member_type == 'method':
                     lines.append("")
                     lines.append(f"    def {name}(self):")
-                    lines.append(f"        return self.{create_unique_name(owner, name)}()")
+                    lines.append(f"        return self.{create_unique_name(owner, name)}()")  # TODO(matt): args
+                else:
+                    raise TypeError(member_type)
     return '\n'.join(lines)
 
 

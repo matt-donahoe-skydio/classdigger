@@ -14,6 +14,13 @@ class DFlat(Base2, Mixin):
     __C__override_this_attr = False
     override_this_attr = __C__override_this_attr
 
+    @property
+    def __D__cool(self):
+        return True
+
+    @property
+    def cool(self):
+        return self.__D__cool
 
     def __A__a_method(self):
         self.a = "B"
