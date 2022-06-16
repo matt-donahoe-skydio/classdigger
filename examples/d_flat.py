@@ -4,6 +4,25 @@ from examples.c import Mixin
 
 class DFlat(Base2, Mixin):
 
+    # This is just an attribute
+    __A__an_attr = True
+    an_attr = __A__an_attr
+
+    __A__another_attr = False  # with a trailing comment
+    another_attr = __A__another_attr
+
+    __A__six = 3 + 3
+    six = __A__six
+
+    __A__seven = six + 1
+    seven = __A__seven
+
+    # B creates this, but C will override it
+    __B__override_this_attr = True
+    # C has overridden this
+    # Second line of comment
+    __C__override_this_attr = False  # MORE COMMENTS!
+    override_this_attr = __C__override_this_attr
 
     # On X2, the motor cant is about the arm axis, so we specify them explicitly. This is from CAD
     # and gets normalized when used downstream.
@@ -14,26 +33,6 @@ class DFlat(Base2, Mixin):
         (1.029, -1.715, 0.0),  # front right
     ]
     MOTOR_CANT_AXES = __B__MOTOR_CANT_AXES
-
-    # This is just an attribute
-    __A__an_attr = True
-    an_attr = __A__an_attr
-
-    __A__another_attr = False  # with a trailing comment
-    another_attr = __A__another_attr
-
-    __A__five = 2 + 3
-    five = __A__five
-
-    # B creates this, but C will override it
-    __B__override_this_attr = True
-    # C has overridden this
-    # Second line of comment
-    __C__override_this_attr = False  # MORE COMMENTS!
-    override_this_attr = __C__override_this_attr
-
-    __A__six = five + 1
-    six = __A__six
 
     @property
     def __D__cool(self):

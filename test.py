@@ -85,8 +85,8 @@ class TestMe(unittest.TestCase):
         expected = {}
         expected["__A__an_attr"] = ("    # This is just an attribute", "True")
         expected["__A__another_attr"] = (None, "False  # with a trailing comment")
-        expected["__A__five"] = (None, "2 + 3")
-        expected["__A__six"] = (None, "five + 1")
+        expected["__A__six"] = (None, "3 + 3")
+        expected["__A__seven"] = (None, "six + 1")
         expected["__B__MOTOR_CANT_AXES"] = (
             "    # On X2, the motor cant is about the arm axis, so we specify them explicitly. This is from CAD\n    # and gets normalized when used downstream.",
             "[\n        (-1.029, 1.715, 0.0),  # back left\n        (1.029, 1.715, 0.0),  # front left\n        (-1.029, -1.715, 0.0),  # back right\n        (1.029, -1.715, 0.0),  # front right\n    ]"
