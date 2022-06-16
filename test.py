@@ -94,7 +94,7 @@ class TestMe(unittest.TestCase):
         expected["__B__override_this_attr"] = ("    # B creates this, but C will override it", "True")
         expected["__C__override_this_attr"] = ("    # C has overridden this\n    # Second line of comment", "False  # MORE COMMENTS!")
 
-        actual = member_defs(examples.d.D, set([examples.a.Base1, examples.a.Base2, examples.c.Mixin]))
+        actual, ordering = member_defs(examples.d.D, set([examples.a.Base1, examples.a.Base2, examples.c.Mixin]))
 
         self.assertDictEqual(expected, actual)
 

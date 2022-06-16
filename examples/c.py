@@ -7,7 +7,7 @@ class Mixin(object):
         return "mixin"
 
 
-class C(A, B, Mixin):
+class C(B, A, Mixin):
     # C has overridden this
     # Second line of comment
     override_this_attr = False  # MORE COMMENTS!
