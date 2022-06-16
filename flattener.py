@@ -44,6 +44,8 @@ def member_defs(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[str, 
     pending_comments = []
     pending_def_lines = []
 
+    ordering = []
+
     # Walk down the inheritance "method-resolution-order"
     for cls in reversed(class_obj.mro()):
         if cls == object:
@@ -119,9 +121,12 @@ def member_defs(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[str, 
                 # Save the comments for this member
                 members[create_unique_name(cls, name)] = (leading_comment, declare)
 
+                if name not in ordering:
+                    ordering.append(name)
+
                 # Clear the comments
                 pending_comments = []
-    return members
+    return members, ordering
 
 
 PY2_SUPER_PATTERN = re.compile("(.*)super\((.*), self\)\.(.*)")
@@ -145,11 +150,49 @@ def member_history(cls, output_parent_classes=tuple(), new_name=None):
         for ancestor in parent.mro():
             classes_to_ignore.add(ancestor)
 
-    comments = member_defs(cls, classes_to_ignore)
+    comments, ordering = member_defs(cls, classes_to_ignore)
 
     lines.append(f"class {new_name}({', '.join(p for p in parents)}):")
+
+
+    # Go through the attr ordering and pull out the defintiions
+    for name in ordering:
+        lines.append("")
+        latest = None
+        previous = None
+        set_any = False
+        owner = None  # wtf was this?
+        for ancestor in reversed(ancestors):
+            # if this ancestor changed the value
+            try:
+                anc_value = getattr(ancestor, name)
+            except AttributeError:
+                continue
+            if latest is None or anc_value != latest:
+                if latest is not None and set_any:
+                    print(f"{name} changed from {latest} to {anc_value} in {ancestor.__name__}")
+                set_any = False
+                latest = anc_value
+                previous = owner
+                owner = ancestor
+                unique_name = create_unique_name(ancestor, name)
+                if owner in classes_to_ignore:
+                    pass
+
+                leading_comment, declare = comments.get(unique_name, (None, None))
+                if leading_comment:
+                    for line in leading_comment.split('\n'):
+                        lines.append(line)
+                define_line = f"    {unique_name} = {declare}"
+                lines.append(define_line)
+        # then assign the non-unique name to the latest value.
+        if latest is not None:
+            if owner in classes_to_ignore:
+                continue
+            lines.append(f"    {name} = __{owner.__name__}__{name}")
+
     # Then iterate over members of just the top class
-    for member_type in ("attr", "property", "method"):
+    for member_type in ("property", "method"):
         for name, member in inspect.getmembers(cls):
             if name.startswith("__"):
                 continue
