@@ -1,20 +1,11 @@
 import unittest
-from classdigger import ClassDigger, member_comments, member_history, PY2_SUPER_PATTERN, arg_names
+
+from flattener import member_comments, member_history, PY2_SUPER_PATTERN, arg_names
 import examples.a
 import examples.c
 import examples.d
 import examples.d_flat
 import examples.diamond
-
-
-class TestClassDigger(unittest.TestCase):
-    maxDiff = 2500
-
-    def test_init(self):
-        ClassDigger(examples.d.D)
-
-    def test_structure(self):
-        ClassDigger(examples.d.D).structure
 
 
 class TestDiamondInheritance(unittest.TestCase):

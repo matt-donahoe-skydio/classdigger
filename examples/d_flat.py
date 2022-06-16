@@ -4,18 +4,19 @@ from examples.c import Mixin
 
 class DFlat(Base2, Mixin):
 
+
     # This is just an attribute
     __A__an_attr = True
     an_attr = __A__an_attr
 
-    __A__another_attr = False
+    __A__another_attr = False  # with a trailing comment
     another_attr = __A__another_attr
 
     # B creates this, but C will override it
-    __B__override_this_attr = True  # pylint: disable=unused-private-member
+    __B__override_this_attr = True
     # C has overridden this
     # Second line of comment
-    __C__override_this_attr = False
+    __C__override_this_attr = False  # MORE COMMENTS!
     override_this_attr = __C__override_this_attr
 
     @property
