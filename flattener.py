@@ -31,7 +31,7 @@ def strip_multiline_strings(text):
     return "".join(output)
 
 
-def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[str, T.List[str]]:
+def member_defs(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[str, T.List[str]]:
     """
     Print the entire class, reducing the inheritance.
     Note this will lose comments that are written outside of method defs.
@@ -42,11 +42,12 @@ def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[s
 
     # Keep a buffer of comments to emit when we find a member in the source.
     pending_comments = []
+    pending_def_lines = []
 
     # Walk down the inheritance "method-resolution-order"
-    for cls in class_obj.mro():
+    for cls in reversed(class_obj.mro()):
         if cls == object:
-            break
+            continue
         if cls in classes_to_ignore:
             continue
 
@@ -55,7 +56,10 @@ def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[s
         sourcelines = strip_multiline_strings(raw_source).splitlines()
 
         # Look at each line of the source, skipping the class def
-        for line in sourcelines[1:]:
+        i = 0
+        while i < len(sourcelines) - 1:
+            i += 1
+            line = sourcelines[i]
 
             # skip empty lines and weird stuff
             if line.strip() and not line.startswith("    "):
@@ -71,6 +75,7 @@ def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[s
             if line.startswith("    def") or line.startswith("    @property"):
                 # clear the comments and ignore method
                 pending_comments = []
+                pending_def_lines = []
                 continue
 
             # Parse potential member definitions
@@ -89,15 +94,30 @@ def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[s
                 else:
                     leading_comment = None
 
+                if '=' not in line:
+                    raise ValueError(line)
+
                 # Attempt to grab a trailing comment from this line
-                if "#" in line:
-                    _, comment = line.split("#", 1)
-                    trailing_comment = "#" + comment
+                _, declare = line.split("= ", 1)
+
+                # Hack to determine if this member uses multiple lines
+                # keep adding lines until there are no syntax errors
+                j = 0
+                while j < 100:
+                    try:
+                        exec("SOME_VAR = {}".format(declare))
+                        break
+                    except SyntaxError:
+                        j += 1
+                        declare += '\n' + sourcelines[i + j]
+                    except NameError:
+                        break
                 else:
-                    trailing_comment = None
+                    raise RuntimeError(line)
+                i += j
 
                 # Save the comments for this member
-                members[create_unique_name(cls, name)] = (leading_comment, trailing_comment)
+                members[create_unique_name(cls, name)] = (leading_comment, declare)
 
                 # Clear the comments
                 pending_comments = []
@@ -125,7 +145,7 @@ def member_history(cls, output_parent_classes=tuple(), new_name=None):
         for ancestor in parent.mro():
             classes_to_ignore.add(ancestor)
 
-    comments = member_comments(cls, classes_to_ignore)
+    comments = member_defs(cls, classes_to_ignore)
 
     lines.append(f"class {new_name}({', '.join(p for p in parents)}):")
     # Then iterate over members of just the top class
@@ -194,13 +214,11 @@ def member_history(cls, output_parent_classes=tuple(), new_name=None):
                                 lines.append(line)
                         # TODO(matt): get the args
                     elif member_type == "attr":
-                        leading_comment, trailing_comment = comments.get(unique_name, (None, None))
+                        leading_comment, declare = comments.get(unique_name, (None, None))
                         if leading_comment:
                             for line in leading_comment.split('\n'):
                                 lines.append(line)
-                        define_line = f"    {unique_name} = {repr(anc_value)}"
-                        if trailing_comment:
-                            define_line += "  " + trailing_comment
+                        define_line = f"    {unique_name} = {declare}"
                         lines.append(define_line)
                     elif member_type == "property":
                         codelines, num = inspect.getsourcelines(anc_value.fget)

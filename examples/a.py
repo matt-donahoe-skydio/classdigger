@@ -19,6 +19,9 @@ class A(Base2):
     an_attr = True
     another_attr = False  # with a trailing comment
 
+    five = 2 + 3
+    six = five + 1
+
     def a_method(self):
         self.a = "B"
         return self.a

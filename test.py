@@ -1,6 +1,6 @@
 import unittest
 
-from flattener import member_comments, member_history, PY2_SUPER_PATTERN, arg_names
+from flattener import member_defs, member_history, PY2_SUPER_PATTERN, arg_names
 import examples.a
 import examples.c
 import examples.d
@@ -81,14 +81,20 @@ class TestMe(unittest.TestCase):
             num += 1
         print(f"tested {num} members")
 
-    def test_member_comments(self):
+    def test_member_defs(self):
         expected = {}
-        expected["__A__an_attr"] = ("    # This is just an attribute", None)
-        expected["__A__another_attr"] = (None, "# with a trailing comment")
-        expected["__B__override_this_attr"] = ("    # B creates this, but C will override it", None)
-        expected["__C__override_this_attr"] = ("    # C has overridden this\n    # Second line of comment", "# MORE COMMENTS!")
+        expected["__A__an_attr"] = ("    # This is just an attribute", "True")
+        expected["__A__another_attr"] = (None, "False  # with a trailing comment")
+        expected["__A__five"] = (None, "2 + 3")
+        expected["__A__six"] = (None, "five + 1")
+        expected["__B__MOTOR_CANT_AXES"] = (
+            "    # On X2, the motor cant is about the arm axis, so we specify them explicitly. This is from CAD\n    # and gets normalized when used downstream.",
+            "[\n        (-1.029, 1.715, 0.0),  # back left\n        (1.029, 1.715, 0.0),  # front left\n        (-1.029, -1.715, 0.0),  # back right\n        (1.029, -1.715, 0.0),  # front right\n    ]"
+        )
+        expected["__B__override_this_attr"] = ("    # B creates this, but C will override it", "True")
+        expected["__C__override_this_attr"] = ("    # C has overridden this\n    # Second line of comment", "False  # MORE COMMENTS!")
 
-        actual = member_comments(examples.d.D, set([examples.a.Base1, examples.a.Base2, examples.c.Mixin]))
+        actual = member_defs(examples.d.D, set([examples.a.Base1, examples.a.Base2, examples.c.Mixin]))
 
         self.assertDictEqual(expected, actual)
 
