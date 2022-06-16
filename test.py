@@ -1,5 +1,5 @@
 import unittest
-from classdigger import ClassDigger, member_history, PY2_SUPER_PATTERN, arg_names
+from classdigger import ClassDigger, member_comments, member_history, PY2_SUPER_PATTERN, arg_names
 import examples.a
 import examples.c
 import examples.d
@@ -89,6 +89,17 @@ class TestMe(unittest.TestCase):
                 self.assertEqual(v, vf, attr)
             num += 1
         print(f"tested {num} members")
+
+    def test_member_comments(self):
+        expected = {}
+        expected["__A__an_attr"] = ("    # This is just an attribute", None)
+        expected["__A__another_attr"] = (None, "# with a trailing comment")
+        expected["__B__override_this_attr"] = ("    # B creates this, but C will override it", None)
+        expected["__C__override_this_attr"] = ("    # C has overridden this\n    # Second line of comment", "# MORE COMMENTS!")
+
+        actual = member_comments(examples.d.D, set([examples.a.Base1, examples.a.Base2, examples.c.Mixin]))
+
+        self.assertDictEqual(expected, actual)
 
 if __name__ == "__main__":
     unittest.main()

@@ -2,6 +2,10 @@ from examples.c import C
 
 
 class D(C):
+    """
+    Docstring for D
+    """
+
     def d_method(self):
         if getattr(self, 'a'):
             return self.a

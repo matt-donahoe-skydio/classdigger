@@ -8,8 +8,12 @@ class Mixin(object):
 
 
 class C(A, B, Mixin):
-    override_this_attr = False
+    # C has overridden this
+    # Second line of comment
+    override_this_attr = False  # MORE COMMENTS!
+    # trailing comment that will be dropped since it comes on the line after.
 
+    # Method comment. We can drop it.
     def c_method(self):
         return "C"
 

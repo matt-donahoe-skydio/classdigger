@@ -4,6 +4,7 @@ import os
 import re
 import sys
 import types
+import typing as T
 
 """
 ancestors = cls.mro()[1:]
@@ -61,6 +62,90 @@ def arg_names(func):
     """
     names = list(inspect.getfullargspec(func).args)[:]  # pylint: disable=no-member
     return names
+
+
+def strip_multiline_strings(text):
+    chunks = text.split("\"\"\"")
+    inside = False
+    output = []
+    for chunk in chunks:
+        if not inside:
+            output.append(chunk)
+        inside = not inside
+    return ''.join(output)
+
+
+def member_comments(class_obj: type, classes_to_ignore: T.Set[type]) -> T.Dict[str, T.List[str]]:
+    """
+    Print the entire class, reducing the inheritance.
+    Note this will lose comments that are written outside of method defs.
+    """
+
+    # Track comments for each member.
+    members = {}
+
+    # Keep a buffer of comments to emit when we find a member in the source.
+    pending_comments = []
+
+    # Walk down the inheritance "method-resolution-order"
+    for cls in class_obj.mro():
+        if cls == object:
+            break
+        if cls in classes_to_ignore:
+            continue
+
+        # Get the definition source for this class, without multi-line strings
+        raw_source = ''.join(inspect.getsourcelines(cls)[0])
+        sourcelines = strip_multiline_strings(raw_source).splitlines()
+
+        # Look at each line of the source, skipping the class def
+        for line in sourcelines[1:]:
+
+            # skip empty lines and weird stuff
+            if line.strip() and not line.startswith("    "):
+                print("skipping weird stuff")
+                print(line.rstrip())
+                continue
+
+            # buffer comments for later
+            if line.startswith("    #"):
+                pending_comments.append(line.rstrip())
+                continue
+
+            if line.startswith("    def") or line.startswith("    @property"):
+                # clear the comments and ignore method
+                pending_comments = []
+                continue
+
+            # Parse potential member definitions
+            if len(line) > 4 and line[4] != " ":
+                words = [word.strip() for word in line.split()]
+                name = words[0]
+                if name in members:
+                    raise KeyError(line)  # XXX
+                    # Skip members we've already defined, and drop comments.
+                    pending_comments = []
+                    continue
+
+                # Group the buffered comments into a single string.
+                if pending_comments:
+                    leading_comment = '\n'.join(pending_comments)
+                else:
+                    leading_comment = None
+
+                # Attempt to grab a trailing comment from this line
+                if "#" in line:
+                    _, comment = line.split("#", 1)
+                    trailing_comment = "#" + comment
+                else:
+                    trailing_comment = None
+
+                # Save the comments for this member
+                members[create_unique_name(cls, name)] = (leading_comment, trailing_comment)
+
+                # Clear the comments
+                pending_comments = []
+    return members
 
 
 PY2_SUPER_PATTERN = re.compile("(.*)super\((.*), self\)\.(.*)")
@@ -330,5 +415,10 @@ def new_main():
     # Add the flattened class definition
     print(output)
 
+def strip_this():
+    content = open(__file__).read()
+    print(strip_multiline_strings(content))
+
 if __name__ == '__main__':
-    new_main()
+    # new_main()
+    strip_this()
